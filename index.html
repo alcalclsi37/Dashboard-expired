@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Summary Product Expire Date</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    html, body { height: 100%; margin: 0; }
+
+    .header-floating {
+      border-radius: 18px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #2563eb 100%);
+      box-shadow: 0 8px 32px rgba(37, 99, 235, 0.35);
+    }
+
+    .tab-active {
+      background: #2563eb;
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .tab-inactive {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+
+    table th {
+      background: #6b7280 !important;
+      color: white !important;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    .thumb-img {
+      width: 44px; height: 44px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 2px solid #e5e7eb;
+    }
+    .thumb-img:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      padding: 12px;
+      max-width: 380px;
+      max-height: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      transform: scale(0.7);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+    .modal-box img {
+      max-width: 100%; max-height: 340px;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
+    .bar-row {
+      transition: all 0.3s;
+    }
+    .bar-fill {
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #3b82f6, #2563eb);
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 2px;
+    }
+
+    select, input[type="text"], input[type="date"], input[type="number"], input[type="password"] {
+      border: 1.5px solid #d1d5db;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    select:focus, input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.13);
+    }
+
+    .pagination-btn {
+      min-width: 34px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1.5px solid #d1d5db;
+      background: white;
+      color: #374151;
+    }
+    .pagination-btn:hover { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+    .pagination-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+    .pagination-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .loading-spinner {
+      border: 3px solid #e5e7eb;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      width: 36px; height: 36px;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.45s ease-out both; }
+
+    .no-img-placeholder {
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      display: flex; align-items: center; justify-content: center;
+      color: #9ca3af;
+      font-size: 18px;
+      border: 2px dashed #d1d5db;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
+    .form-input { width: 100%; }
+
+    .success-message {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      display: none;
+      border-left: 4px solid #10b981;
+    }
+    .success-message.show { display: block; animation: fadeInUp 0.3s ease-out; }
+
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      display: none;
+      border-left: 4px solid #ef4444;
+    }
+    .error-message.show { display: block; animation: fadeInUp 0.3s ease-out; }
+  </style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-gray-50">
+  <div id="app" class="h-full w-full overflow-auto" style="padding: 16px;">
+   <!-- Header -->
+   <header class="header-floating mx-auto max-w-6xl px-6 py-5 mb-5 fade-in" style="margin-top: 4px;">
+    <div class="flex items-center gap-3">
+     <div class="bg-white/20 rounded-xl p-2.5">
+      <i data-lucide="package-search" style="width:28px;height:28px;color:white;"></i>
+     </div>
+     <div>
+      <h1 id="mainTitle" class="text-white font-extrabold text-xl tracking-tight" style="margin:0;">SUMMARY PRODUCT EXPIRE DATE</h1>
+      <p id="subtitleText" class="text-blue-100 text-xs mt-0.5 font-medium" style="margin:0;">Dashboard Monitoring Produk Expired</p>
+     </div>
+    </div>
+   </header><!-- Tabs -->
+   <nav class="mx-auto max-w-6xl flex gap-2 mb-4 fade-in" style="animation-delay:0.08s;" aria-label="Main navigation">
+    <button id="tabSummary" class="tab-active px-5 py-2 rounded-xl font-semibold text-sm flex items-center gap-1.5 transition-all" onclick="switchTab('summary')"> <i data-lucide="table" style="width:16px;height:16px;"></i> Summary </button> <button id="tabInfografis" class="tab-inactive px-5 py-2 rounded-xl font-semibold text-sm flex items-center gap-1.5 transition-all" onclick="switchTab('infografis')"> <i data-lucide="bar-chart-3" style="width:16px;height:16px;"></i> Infografis </button>
+   </nav><!-- SUMMARY TAB -->
+   <main id="summaryPanel" class="mx-auto max-w-6xl fade-in" style="animation-delay:0.14s;">
+    <!-- Stats -->
+    <div id="statsRow" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"></div><!-- Filters -->
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4" aria-label="Filters">
+     <div class="flex flex-wrap items-end gap-3">
+      <div class="flex-1 min-w-[160px]">
+       <label for="filterKategori" class="block text-xs font-semibold text-gray-500 mb-1">Kategori</label> <select id="filterKategori" class="w-full"><option value="">Semua Kategori</option></select>
+      </div>
+      <div class="flex-1 min-w-[160px]">
+       <label for="filterLorong" class="block text-xs font-semibold text-gray-500 mb-1">Lorong</label> <select id="filterLorong" class="w-full"><option value="">Semua Lorong</option></select>
+      </div>
+      <div class="flex-1 min-w-[160px]">
+       <label for="filterStaff" class="block text-xs font-semibold text-gray-500 mb-1">Staff</label> <select id="filterStaff" class="w-full"><option value="">Semua Staff</option></select>
+      </div>
+      <div class="flex-1 min-w-[200px]">
+       <label for="searchBox" class="block text-xs font-semibold text-gray-500 mb-1">Pencarian Cepat</label>
+       <div class="relative">
+        <i data-lucide="search" style="width:15px;height:15px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;"></i> <input type="text" id="searchBox" placeholder="Cari nama produk, barcode..." class="w-full pl-8">
+       </div>
+      </div><button onclick="resetFilters()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5" style="height:38px;"> <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset </button> <button onclick="window.open('https://docs.google.com/spreadsheets/d/1cWtdK9fw1izkb5wwpmcWSFA3vCD5QffRrmVbC5plR8U/edit?usp=sharing', '_blank', 'noopener,noreferrer')" class="bg-green-100 hover:bg-green-200 text-green-700 font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5" style="height:38px;"> <i data-lucide="file-spreadsheet" style="width:14px;height:14px;"></i> View .xls </button> <button onclick="showAdminPasswordModal()" class="bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5" style="height:38px;"> <i data-lucide="lock" style="width:14px;height:14px;"></i> Admin </button>
+     </div>
+    </section><!-- Table Controls -->
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div class="flex items-center gap-2 text-sm text-gray-500">
+       <label for="perPage">Tampilkan</label> <select id="perPage" class="text-sm" style="padding:4px 8px;" onchange="changePerPage()"> <option value="10">10</option> <option value="20">20</option> <option value="50">50</option> <option value="100">100</option> <option value="all">Semua</option> </select> <span>data</span>
+      </div>
+      <div id="dataInfo" class="text-xs text-gray-400 font-medium"></div>
+     </div>
+     <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+       <thead>
+        <tr>
+         <th class="px-3 py-3 text-left">No</th>
+         <th class="px-3 py-3 text-left cursor-pointer hover:bg-gray-700 transition select-none" onclick="sortTableByDate()" title="Klik untuk mengurutkan">Tanggal Pengecekan <i id="sortIconDate" data-lucide="arrow-down-up" style="width:14px;height:14px;display:inline-block;margin-left:4px;opacity:0.6;"></i></th>
+         <th class="px-3 py-3 text-left">Kategori</th>
+         <th class="px-3 py-3 text-left">Barcode</th>
+         <th class="px-3 py-3 text-left cursor-pointer hover:bg-gray-700 transition select-none" onclick="sortTableByProduct()" title="Klik untuk mengurutkan">Nama Produk <i id="sortIcon" data-lucide="arrow-down-up" style="width:14px;height:14px;display:inline-block;margin-left:4px;opacity:0.6;"></i></th>
+         <th class="px-3 py-3 text-left cursor-pointer hover:bg-gray-700 transition select-none" onclick="sortTableByExpired()" title="Klik untuk mengurutkan">Tanggal Expired <i id="sortIconExpired" data-lucide="arrow-down-up" style="width:14px;height:14px;display:inline-block;margin-left:4px;opacity:0.6;"></i></th>
+         <th class="px-3 py-3 text-center">Jumlah</th>
+         <th class="px-3 py-3 text-left">Lorong</th>
+         <th class="px-3 py-3 text-left">Staff Input</th>
+         <th class="px-3 py-3 text-center">Foto</th>
+        </tr>
+       </thead>
+       <tbody id="tableBody"></tbody>
+      </table>
+     </div>
+     <div id="paginationBar" class="flex items-center justify-between px-4 py-3 border-t border-gray-100"></div>
+    </section><!-- Loading -->
+    <div id="loadingState" class="flex flex-col items-center justify-center py-16">
+     <div class="loading-spinner mb-3"></div>
+     <p class="text-sm text-gray-400">Memuat data dari spreadsheet...</p>
+    </div>
+   </main><!-- INFOGRAFIS TAB -->
+   <section id="infografisPanel" class="mx-auto max-w-6xl hidden fade-in">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+     <div class="flex flex-wrap items-end gap-3 mb-5">
+      <div class="flex-1 min-w-[160px]">
+       <label for="chartFilterKategori" class="block text-xs font-semibold text-gray-500 mb-1">Filter Kategori</label> <select id="chartFilterKategori" class="w-full"><option value="">Semua Kategori</option></select>
+      </div>
+      <div class="flex-1 min-w-[160px]">
+       <label for="chartSortBy" class="block text-xs font-semibold text-gray-500 mb-1">Urutkan</label> <select id="chartSortBy" class="w-full"> <option value="qty_desc">Jumlah Terbanyak</option> <option value="qty_asc">Jumlah Tersedikit</option> <option value="exp_asc">Expired Terdekat</option> <option value="exp_desc">Expired Terjauh</option> </select>
+      </div>
+      <div class="flex-1 min-w-[140px]">
+       <label for="chartLimit" class="block text-xs font-semibold text-gray-500 mb-1">Tampilkan</label> <select id="chartLimit" class="w-full"> <option value="10">Top 10</option> <option value="20">Top 20</option> <option value="50">Top 50</option> <option value="all">Semua</option> </select>
+      </div>
+      <div class="flex-1 min-w-[160px]">
+       <label for="chartSortProduct" class="block text-xs font-semibold text-gray-500 mb-1">Urutan Nama Produk</label> <select id="chartSortProduct" class="w-full"> <option value="asc">A-Z</option> <option value="desc">Z-A</option> </select>
+      </div><button onclick="resetChartFilters()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5" style="height:38px;"> <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset </button>
+     </div>
+     <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2"><i data-lucide="bar-chart-3" style="width:16px;height:16px;color:#3b82f6;"></i> Jumlah Produk per Item</h2>
+     <div id="chartContainer" class="space-y-2"></div>
+     <div id="chartEmpty" class="hidden text-center py-10 text-gray-400 text-sm">
+      Tidak ada data untuk ditampilkan
+     </div>
+    </div>
+   </section><!-- Image Modal -->
+   <div id="imgModal" class="modal-overlay" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+     <div class="flex justify-end mb-1">
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+     </div><img id="modalImg" src="" alt="Preview Foto Produk" loading="lazy" onerror="this.style.display='none';">
+    </div>
+   </div><!-- Admin Password Modal -->
+   <div id="adminPasswordModal" class="modal-overlay" onclick="if(event.target.id==='adminPasswordModal') closeAdminModal()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width: 320px; max-height: auto; padding: 20px;">
+     <div class="flex justify-between items-center mb-4">
+      <h3 class="text-base font-bold text-gray-800">Akses Admin</h3><button onclick="closeAdminModal()" class="text-gray-400 hover:text-gray-600 transition"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+     </div>
+     <div class="mb-3"><label class="block text-xs font-semibold text-gray-600 mb-2">Masukkan Password</label> <input type="password" id="adminPassword" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+     </div>
+     <div id="adminError" class="bg-red-100 text-red-700 text-xs px-3 py-2 rounded-lg mb-3" style="display:none;">
+      Password salah, coba lagi
+     </div>
+     <div class="flex gap-2"><button onclick="closeAdminModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs py-2 rounded-lg transition"> Batal </button> <button onclick="checkAdminPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 rounded-lg transition"> Masuk </button>
+     </div>
+    </div>
+   </div><!-- Footer -->
+   <footer class="mx-auto max-w-6xl text-center py-4">
+    <p class="text-xs text-gray-300">Product Expire Date Monitoring Dashboard</p>
+   </footer>
+  </div>
+  <script>
+    // ─── State ───
+    let allData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    let perPage = 10;
+    let tableSortProduct = null;
+    let tableSortExpired = null;
+    let tableSortDate = null;
+
+    const defaultConfig = {
+      site_title: 'SUMMARY PRODUCT EXPIRE DATE',
+      subtitle_text: 'Dashboard Monitoring Produk Expired',
+      background_color: '#f9fafb',
+      header_color: '#2563eb',
+      surface_color: '#ffffff',
+      text_color: '#1f2937',
+      accent_color: '#3b82f6',
+      font_family: 'Plus Jakarta Sans'
+    };
+
+    // ─── Element SDK ───
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => {
+        const c = { ...defaultConfig, ...config };
+        document.getElementById('mainTitle').textContent = c.site_title;
+        document.getElementById('subtitleText').textContent = c.subtitle_text;
+        document.getElementById('app').style.background = c.background_color;
+        document.querySelectorAll('.header-floating').forEach(el => {
+          el.style.background = `linear-gradient(135deg, ${c.header_color}, ${c.accent_color})`;
+        });
+        document.body.style.fontFamily = `${c.font_family}, Plus Jakarta Sans, sans-serif`;
+      },
+      mapToCapabilities: (config) => {
+        const c = { ...defaultConfig, ...config };
+        return {
+          recolorables: [
+            { get: () => c.background_color, set: (v) => { c.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+            { get: () => c.surface_color, set: (v) => { c.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+            { get: () => c.text_color, set: (v) => { c.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+            { get: () => c.header_color, set: (v) => { c.header_color = v; window.elementSdk.setConfig({ header_color: v }); } },
+            { get: () => c.accent_color, set: (v) => { c.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => c.font_family,
+            set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+          },
+          fontSizeable: undefined
+        };
+      },
+      mapToEditPanelValues: (config) => {
+        const c = { ...defaultConfig, ...config };
+        return new Map([
+          ['site_title', c.site_title],
+          ['subtitle_text', c.subtitle_text]
+        ]);
+      }
+    });
+
+    // ─── CSV Fetch & Parse ───
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vREz2JiEJyESnFIyafKyu9cYUaUQxlf2zMdYCYgTVY2_AZX5jbHokHVeRv9EZnOhkIGlFDG0I68h2j3/pub?gid=0&single=true&output=csv';
+
+    function parseCSV(text) {
+      const rows = [];
+      let current = '';
+      let inQuotes = false;
+      let row = [];
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+          if (ch === '"' && text[i + 1] === '"') { current += '"'; i++; }
+          else if (ch === '"') { inQuotes = false; }
+          else { current += ch; }
+        } else {
+          if (ch === '"') { inQuotes = true; }
+          else if (ch === ',') { row.push(current.trim()); current = ''; }
+          else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
+            row.push(current.trim()); current = '';
+            if (row.some(c => c)) rows.push(row);
+            row = [];
+            if (ch === '\r') i++;
+          } else { current += ch; }
+        }
+      }
+      row.push(current.trim());
+      if (row.some(c => c)) rows.push(row);
+      return rows;
+    }
+
+    async function fetchData() {
+      try {
+        const res = await fetch(SHEET_URL, { method: 'GET', mode: 'cors' });
+        if (!res.ok) {
+          console.error('HTTP error:', res.status);
+          showError('Gagal memuat data dari spreadsheet. Status: ' + res.status);
+          return;
+        }
+        const text = await res.text();
+        if (!text || text.trim().length === 0) {
+          console.error('Response kosong');
+          showError('Spreadsheet kosong atau tidak dapat diakses');
+          return;
+        }
+        const rows = parseCSV(text);
+        if (rows.length < 2) {
+          console.warn('Data terlalu sedikit:', rows.length);
+          showError('Tidak ada data ditemukan di spreadsheet');
+          allData = [];
+          renderAll();
+          return;
+        }
+        const headers = rows[0];
+        if (!headers || headers.length === 0 || headers.every(h => !h)) {
+          console.error('Header tidak valid');
+          showError('Header spreadsheet tidak valid');
+          return;
+        }
+        allData = rows.slice(1)
+          .filter(r => r.some(c => c && c.trim()))
+          .map((r, idx) => {
+            const obj = {};
+            headers.forEach((h, i) => { obj[h] = r[i] || ''; });
+            obj._idx = idx + 1;
+            return obj;
+          });
+        if (allData.length === 0) {
+          console.warn('Tidak ada data valid setelah parsing');
+          showError('Tidak ada data produk di spreadsheet');
+        }
+        buildFilters();
+        renderAll();
+      } catch (e) {
+        console.error('Fetch error:', e.message);
+        showError('Kesalahan mengambil data: ' + e.message);
+        allData = [];
+        renderAll();
+      } finally {
+        document.getElementById('loadingState').style.display = 'none';
+      }
+    }
+
+    function showError(msg) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-red-600"><div class="flex flex-col items-center gap-2"><i data-lucide="alert-circle" style="width:32px;height:32px;"></i><span class="text-sm font-medium">${msg}</span></div></td></tr>`;
+      lucide.createIcons();
+    }
+
+    // ─── Helpers ───
+    function getCol(row, partialKey) {
+      const keys = Object.keys(row);
+      const exactMatch = keys.find(k => k.toLowerCase() === partialKey.toLowerCase());
+      if (exactMatch) return row[exactMatch];
+      const k = keys.find(k => k.toLowerCase().includes(partialKey.toLowerCase()));
+      return k ? row[k] : '';
+    }
+
+    function getProductName(row) {
+      const keys = Object.keys(row);
+      const match = keys.find(k => k.toLowerCase().includes('nama') && !k.toLowerCase().includes('staff'));
+      return match ? row[match] : '';
+    }
+
+    function getStaffName(row) {
+      const keys = Object.keys(row);
+      const match = keys.find(k => k.toLowerCase().includes('staff') || (k.toLowerCase().includes('nama') && k.toLowerCase().includes('staff')));
+      return match ? row[match] : '';
+    }
+
+    function getCategories() { return [...new Set(allData.map(r => getCol(r, 'kategori')).filter(Boolean))].sort(); }
+    function getLorongs() { return [...new Set(allData.map(r => getCol(r, 'lorong')).filter(Boolean))].sort(); }
+    function getStaffs() { return [...new Set(allData.map(r => getCol(r, 'staff')).filter(Boolean))].sort(); }
+
+    function buildFilters() {
+      populateSelect('filterKategori', getCategories(), 'Semua Kategori');
+      populateSelect('filterLorong', getLorongs(), 'Semua Lorong');
+      populateSelect('filterStaff', getStaffs(), 'Semua Staff');
+      populateSelect('chartFilterKategori', getCategories(), 'Semua Kategori');
+    }
+
+    function populateSelect(id, items, allLabel) {
+      const sel = document.getElementById(id);
+      sel.innerHTML = `<option value="">${allLabel}</option>` + items.map(i => `<option value="${escH(i)}">${escH(i)}</option>`).join('');
+    }
+
+    function escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // ─── Filtering ───
+    function applyFilters() {
+      const kat = document.getElementById('filterKategori').value;
+      const lor = document.getElementById('filterLorong').value;
+      const stf = document.getElementById('filterStaff').value;
+      const q = document.getElementById('searchBox').value.toLowerCase();
+
+      filteredData = allData.filter(r => {
+        if (kat && getCol(r, 'kategori') !== kat) return false;
+        if (lor && getCol(r, 'lorong') !== lor) return false;
+        if (stf && getCol(r, 'staff') !== stf) return false;
+        if (q) {
+          const searchable = Object.values(r).join(' ').toLowerCase();
+          if (!searchable.includes(q)) return false;
+        }
+        return true;
+      });
+      currentPage = 1;
+      renderTable();
+      renderStats();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterKategori').value = '';
+      document.getElementById('filterLorong').value = '';
+      document.getElementById('filterStaff').value = '';
+      document.getElementById('searchBox').value = '';
+      applyFilters();
+    }
+
+    // ─── Render ───
+    function renderAll() {
+      applyFilters();
+      renderChart();
+    }
+
+    function renderStats() {
+      const stats = document.getElementById('statsRow');
+      const total = filteredData.length;
+      const categories = new Set(filteredData.map(r => getCol(r, 'kategori'))).size;
+      const totalQty = filteredData.reduce((s, r) => s + (parseInt(getCol(r, 'jumlah')) || 0), 0);
+      const staffCount = new Set(filteredData.map(r => getCol(r, 'staff')).filter(Boolean)).size;
+
+      const cards = [
+        { icon: 'package', label: 'Total Produk', val: total, color: '#3b82f6' },
+        { icon: 'layers', label: 'Kategori', val: categories, color: '#8b5cf6' },
+        { icon: 'hash', label: 'Total Jumlah', val: totalQty, color: '#f59e0b' },
+        { icon: 'users', label: 'Staff', val: staffCount, color: '#10b981' }
+      ];
+
+      stats.innerHTML = cards.map(c => `
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 flex items-center gap-3">
+          <div class="rounded-lg p-2" style="background:${c.color}15;">
+            <i data-lucide="${c.icon}" style="width:20px;height:20px;color:${c.color};"></i>
+          </div>
+          <div>
+            <div class="text-lg font-extrabold text-gray-800">${c.val.toLocaleString('id-ID')}</div>
+            <div class="text-[10px] text-gray-400 font-medium uppercase tracking-wide">${c.label}</div>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const isAll = perPage === 'all';
+      let sortedData = [...filteredData];
+      
+      if (tableSortDate !== null) {
+        if (tableSortDate === 'asc') {
+          sortedData.sort((a, b) => parseDate(getCol(a, 'tanggal pengecekan') || getCol(a, 'tanggal_pengecekan') || getCol(a, 'pengecekan')) - parseDate(getCol(b, 'tanggal pengecekan') || getCol(b, 'tanggal_pengecekan') || getCol(b, 'pengecekan')));
+        } else if (tableSortDate === 'desc') {
+          sortedData.sort((a, b) => parseDate(getCol(b, 'tanggal pengecekan') || getCol(b, 'tanggal_pengecekan') || getCol(b, 'pengecekan')) - parseDate(getCol(a, 'tanggal pengecekan') || getCol(a, 'tanggal_pengecekan') || getCol(a, 'pengecekan')));
+        }
+      } else if (tableSortProduct !== null) {
+        if (tableSortProduct === 'asc') {
+          sortedData.sort((a, b) => getProductName(a).localeCompare(getProductName(b)));
+        } else if (tableSortProduct === 'desc') {
+          sortedData.sort((a, b) => getProductName(b).localeCompare(getProductName(a)));
+        }
+      } else if (tableSortExpired !== null) {
+        if (tableSortExpired === 'asc') {
+          sortedData.sort((a, b) => parseDate(getCol(a, 'expired') || getCol(a, 'tanggal expired')) - parseDate(getCol(b, 'expired') || getCol(b, 'tanggal expired')));
+        } else if (tableSortExpired === 'desc') {
+          sortedData.sort((a, b) => parseDate(getCol(b, 'expired') || getCol(b, 'tanggal expired')) - parseDate(getCol(a, 'expired') || getCol(a, 'tanggal expired')));
+        }
+      } else {
+        // Default: tampilkan data terakhir masuk di atas
+        sortedData.reverse();
+      }
+      
+      const total = sortedData.length;
+      const pp = isAll ? total : perPage;
+      const totalPages = isAll ? 1 : Math.ceil(total / pp) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const start = (currentPage - 1) * pp;
+      const pageData = sortedData.slice(start, start + pp);
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-12 text-gray-300"><div class="flex flex-col items-center gap-2"><i data-lucide="inbox" style="width:36px;height:36px;"></i><span class="text-sm">Tidak ada data ditemukan</span></div></td></tr>`;
+        lucide.createIcons();
+      } else {
+        tbody.innerHTML = pageData.map((r, i) => {
+          const foto = getCol(r, 'foto');
+          const fotoHtml = foto && (foto.startsWith('http'))
+            ? `<img src="${escH(foto)}" alt="Foto ${escH(getCol(r,'nama'))}" class="thumb-img" loading="lazy" onclick="openModal('${escH(foto)}')" onerror="this.outerHTML='<div class=\\'no-img-placeholder\\'><i data-lucide=\\'image-off\\' style=\\'width:18px;height:18px;\\'></i></div>'">` 
+            : `<div class="no-img-placeholder"><i data-lucide="image-off" style="width:18px;height:18px;"></i></div>`;
+
+          return `<tr class="border-b border-gray-50 hover:bg-blue-50/40 transition-colors">
+            <td class="px-3 py-2.5 text-gray-400 font-medium">${start + i + 1}</td>
+            <td class="px-3 py-2.5 text-gray-700 whitespace-nowrap">${escH(getCol(r, 'tanggal pengecekan') || getCol(r, 'tanggal_pengecekan') || getCol(r, 'pengecekan'))}</td>
+            <td class="px-3 py-2.5"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md text-[11px] font-semibold">${escH(getCol(r, 'kategori'))}</span></td>
+            <td class="px-3 py-2.5 text-gray-600 font-mono text-[11px]">${escH(getCol(r, 'barcode'))}</td>
+            <td class="px-3 py-2.5 text-gray-800 font-semibold max-w-[200px] truncate">${escH(getProductName(r))}</td>
+            <td class="px-3 py-2.5 text-gray-700 whitespace-nowrap">${escH(getCol(r, 'expired') || getCol(r, 'tanggal expired'))}</td>
+            <td class="px-3 py-2.5 text-center font-bold text-gray-800">${escH(getCol(r, 'jumlah'))}</td>
+            <td class="px-3 py-2.5 text-gray-600">${escH(getCol(r, 'lorong'))}</td>
+            <td class="px-3 py-2.5 text-gray-600">${escH(getStaffName(r))}</td>
+            <td class="px-3 py-2.5 flex justify-center">${fotoHtml}</td>
+          </tr>`;
+        }).join('');
+      }
+      lucide.createIcons();
+      updateSortIcons();
+
+      const endIdx = Math.min(start + pp, total);
+      document.getElementById('dataInfo').textContent = total > 0
+        ? `Menampilkan ${start + 1}-${endIdx} dari ${total} data`
+        : 'Tidak ada data';
+
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const bar = document.getElementById('paginationBar');
+      if (totalPages <= 1) { bar.innerHTML = ''; return; }
+
+      let pages = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (currentPage > 3) pages.push('...');
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+        if (currentPage < totalPages - 2) pages.push('...');
+        pages.push(totalPages);
+      }
+
+      bar.innerHTML = `
+        <button class="pagination-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+          <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+        </button>
+        <div class="flex gap-1">
+          ${pages.map(p => p === '...'
+            ? `<span class="px-2 text-gray-400 text-xs flex items-center">…</span>`
+            : `<button class="pagination-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`
+          ).join('')}
+        </div>
+        <button class="pagination-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+          <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+        </button>
+      `;
+      lucide.createIcons();
+    }
+
+    function goPage(p) {
+      currentPage = p;
+      renderTable();
+      document.querySelector('#summaryPanel .overflow-x-auto')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function changePerPage() {
+      const val = document.getElementById('perPage').value;
+      perPage = val === 'all' ? 'all' : parseInt(val);
+      currentPage = 1;
+      renderTable();
+    }
+
+    // ─── Modal ───
+    function openModal(url) {
+      const modal = document.getElementById('imgModal');
+      const img = document.getElementById('modalImg');
+      img.src = url;
+      img.style.display = 'block';
+      modal.classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('imgModal').classList.remove('active');
+    }
+
+    // ─── Admin Password ───
+    function showAdminPasswordModal() {
+      const modal = document.getElementById('adminPasswordModal');
+      modal.classList.add('active');
+      const passInput = document.getElementById('adminPassword');
+      passInput.value = '';
+      document.getElementById('adminError').style.display = 'none';
+      setTimeout(() => passInput.focus(), 100);
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminPasswordModal').classList.remove('active');
+    }
+
+    function checkAdminPassword() {
+      const password = document.getElementById('adminPassword').value;
+      const correctPassword = '0000';
+      if (password === correctPassword) {
+        closeAdminModal();
+        window.open('https://docs.google.com/spreadsheets/d/1dEqgMZOvSugV5F_8CM4IVnfZ_P2hAcAJN6HHqHvtEvE/edit?usp=sharing', '_blank', 'noopener,noreferrer');
+      } else {
+        document.getElementById('adminError').style.display = 'block';
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+      }
+    }
+
+    // Enter key untuk password modal
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('adminPasswordModal');
+      if (e.key === 'Enter' && modal.classList.contains('active')) {
+        checkAdminPassword();
+      }
+    });
+
+    // ─── Tabs ───
+    function switchTab(tab) {
+      const s = document.getElementById('summaryPanel');
+      const inf = document.getElementById('infografisPanel');
+      const ts = document.getElementById('tabSummary');
+      const ti = document.getElementById('tabInfografis');
+
+      // Hide all panels and reset tab styles
+      [s, inf].forEach(p => p.classList.add('hidden'));
+      [ts, ti].forEach(b => b.className = b.className.replace('tab-active', 'tab-inactive'));
+
+      if (tab === 'summary') {
+        s.classList.remove('hidden');
+        ts.className = ts.className.replace('tab-inactive', 'tab-active');
+      } else if (tab === 'infografis') {
+        inf.classList.remove('hidden');
+        ti.className = ti.className.replace('tab-inactive', 'tab-active');
+        renderChart();
+      }
+    }
+
+    // ─── Chart ───
+    function renderChart() {
+      const container = document.getElementById('chartContainer');
+      const emptyMsg = document.getElementById('chartEmpty');
+      const katFilter = document.getElementById('chartFilterKategori').value;
+      const sortBy = document.getElementById('chartSortBy').value;
+      const limitVal = document.getElementById('chartLimit').value;
+      const sortProduct = document.getElementById('chartSortProduct').value;
+
+      let data = [...allData];
+      if (katFilter) data = data.filter(r => getCol(r, 'kategori') === katFilter);
+
+      const map = new Map();
+      data.forEach(r => {
+        const name = getProductName(r);
+        const qty = parseInt(getCol(r, 'jumlah')) || 0;
+        const exp = getCol(r, 'expired') || getCol(r, 'tanggal expired') || '';
+        if (!name) return;
+        if (map.has(name)) {
+          const e = map.get(name);
+          e.qty += qty;
+        } else {
+          map.set(name, { name, qty, exp });
+        }
+      });
+
+      let items = [...map.values()];
+
+      if (sortBy === 'qty_desc') items.sort((a, b) => b.qty - a.qty);
+      else if (sortBy === 'qty_asc') items.sort((a, b) => a.qty - b.qty);
+      else if (sortBy === 'exp_asc') items.sort((a, b) => parseDate(a.exp) - parseDate(b.exp));
+      else if (sortBy === 'exp_desc') items.sort((a, b) => parseDate(b.exp) - parseDate(a.exp));
+      else {
+        if (sortProduct === 'asc') items.sort((a, b) => a.name.localeCompare(b.name));
+        else if (sortProduct === 'desc') items.sort((a, b) => b.name.localeCompare(a.name));
+      }
+
+      if (limitVal !== 'all') items = items.slice(0, parseInt(limitVal));
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+      emptyMsg.classList.add('hidden');
+
+      const maxQty = Math.max(...items.map(i => i.qty), 1);
+      const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#6366f1'];
+
+      container.innerHTML = items.map((item, idx) => {
+        const pct = (item.qty / maxQty) * 100;
+        const col = colors[idx % colors.length];
+        return `
+          <div class="bar-row flex items-center gap-3 py-1.5 group hover:bg-gray-50 rounded-lg px-2 transition" style="animation: fadeInUp 0.4s ease-out ${idx * 0.03}s both;">
+            <div class="w-[180px] sm:w-[220px] flex-shrink-0 text-right pr-2">
+              <span class="text-xs font-semibold text-gray-700 truncate block" title="${escH(item.name)}">${escH(item.name)}</span>
+              <span class="text-[10px] text-gray-400">${escH(item.exp)}</span>
+            </div>
+            <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden" style="height:28px;">
+              <div class="bar-fill flex items-center px-2" style="width:${pct}%; background: linear-gradient(90deg, ${col}, ${col}cc);">
+                <span class="text-white text-[10px] font-bold whitespace-nowrap">${item.qty}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function parseDate(str) {
+      if (!str) return 0;
+      str = str.trim();
+      
+      // Try DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY format
+      const parts = str.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        let day = parseInt(parts[0]);
+        let month = parseInt(parts[1]);
+        let year = parseInt(parts[2]);
+        
+        // Validate the parsed values
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          // Handle 2-digit years
+          if (year < 100) {
+            year = year < 50 ? 2000 + year : 1900 + year;
+          }
+          
+          // Validate day and month ranges
+          if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+            const d = new Date(year, month - 1, day);
+            // Verify the date is valid (e.g., Feb 30 should fail)
+            if (d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day) {
+              return d.getTime();
+            }
+          }
+        }
+      }
+      
+      // Try YYYY-MM-DD ISO format
+      const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) {
+        const year = parseInt(isoMatch[1]);
+        const month = parseInt(isoMatch[2]);
+        const day = parseInt(isoMatch[3]);
+        if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+          const d = new Date(year, month - 1, day);
+          if (d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day) {
+            return d.getTime();
+          }
+        }
+      }
+      
+      // Fallback: try native Date parsing
+      const d = new Date(str);
+      return isNaN(d) ? 0 : d.getTime();
+    }
+
+    function resetChartFilters() {
+      document.getElementById('chartFilterKategori').value = '';
+      document.getElementById('chartSortBy').value = 'qty_desc';
+      document.getElementById('chartLimit').value = '10';
+      document.getElementById('chartSortProduct').value = 'asc';
+      renderChart();
+    }
+
+    function sortTableByProduct() {
+      if (tableSortProduct === null) {
+        tableSortProduct = 'asc';
+        tableSortExpired = null;
+        tableSortDate = null;
+      } else if (tableSortProduct === 'asc') {
+        tableSortProduct = 'desc';
+      } else {
+        tableSortProduct = null;
+      }
+      currentPage = 1;
+      renderTable();
+    }
+
+    function sortTableByExpired() {
+      if (tableSortExpired === null) {
+        tableSortExpired = 'asc';
+        tableSortProduct = null;
+        tableSortDate = null;
+      } else if (tableSortExpired === 'asc') {
+        tableSortExpired = 'desc';
+      } else {
+        tableSortExpired = null;
+      }
+      currentPage = 1;
+      renderTable();
+    }
+
+    function sortTableByDate() {
+      if (tableSortDate === null) {
+        tableSortDate = 'asc';
+        tableSortProduct = null;
+        tableSortExpired = null;
+      } else if (tableSortDate === 'asc') {
+        tableSortDate = 'desc';
+      } else {
+        tableSortDate = null;
+      }
+      currentPage = 1;
+      renderTable();
+    }
+
+    function updateSortIcons() {
+      const iconDate = document.getElementById('sortIconDate');
+      const iconProduct = document.getElementById('sortIcon');
+      const iconExpired = document.getElementById('sortIconExpired');
+      
+      if (iconDate) {
+        if (tableSortDate === 'asc') {
+          iconDate.setAttribute('data-lucide', 'arrow-up');
+          iconDate.style.opacity = '1';
+          iconDate.style.color = '#3b82f6';
+        } else if (tableSortDate === 'desc') {
+          iconDate.setAttribute('data-lucide', 'arrow-down');
+          iconDate.style.opacity = '1';
+          iconDate.style.color = '#3b82f6';
+        } else {
+          iconDate.setAttribute('data-lucide', 'arrow-down-up');
+          iconDate.style.opacity = '0.6';
+          iconDate.style.color = 'white';
+        }
+      }
+      
+      if (iconProduct) {
+        if (tableSortProduct === 'asc') {
+          iconProduct.setAttribute('data-lucide', 'arrow-up-a-z');
+          iconProduct.style.opacity = '1';
+          iconProduct.style.color = '#3b82f6';
+        } else if (tableSortProduct === 'desc') {
+          iconProduct.setAttribute('data-lucide', 'arrow-down-z-a');
+          iconProduct.style.opacity = '1';
+          iconProduct.style.color = '#3b82f6';
+        } else {
+          iconProduct.setAttribute('data-lucide', 'arrow-down-up');
+          iconProduct.style.opacity = '0.6';
+          iconProduct.style.color = 'white';
+        }
+      }
+      
+      if (iconExpired) {
+        if (tableSortExpired === 'asc') {
+          iconExpired.setAttribute('data-lucide', 'arrow-up');
+          iconExpired.style.opacity = '1';
+          iconExpired.style.color = '#3b82f6';
+        } else if (tableSortExpired === 'desc') {
+          iconExpired.setAttribute('data-lucide', 'arrow-down');
+          iconExpired.style.opacity = '1';
+          iconExpired.style.color = '#3b82f6';
+        } else {
+          iconExpired.setAttribute('data-lucide', 'arrow-down-up');
+          iconExpired.style.opacity = '0.6';
+          iconExpired.style.color = 'white';
+        }
+      }
+      
+      lucide.createIcons();
+    }
+
+    // ─── Event Listeners ───
+    document.getElementById('filterKategori').addEventListener('change', applyFilters);
+    document.getElementById('filterLorong').addEventListener('change', applyFilters);
+    document.getElementById('filterStaff').addEventListener('change', applyFilters);
+    document.getElementById('searchBox').addEventListener('input', applyFilters);
+    document.getElementById('chartFilterKategori').addEventListener('change', renderChart);
+    document.getElementById('chartSortBy').addEventListener('change', renderChart);
+    document.getElementById('chartLimit').addEventListener('change', renderChart);
+    document.getElementById('chartSortProduct').addEventListener('change', renderChart);
+
+    // ESC to close modals
+    document.addEventListener('keydown', e => { 
+      if (e.key === 'Escape') {
+        closeModal();
+        closeAdminModal();
+      }
+    });
+
+    // Init
+    lucide.createIcons();
+    fetchData();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dc7e73146ad3d9e',t:'MTc3MzUzOTgwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
